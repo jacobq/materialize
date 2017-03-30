@@ -36,7 +36,7 @@
       var calcRightPos = function(el) {
         var original = Math.ceil($tabs_width - el.position().left - el.outerWidth() - $this.scrollLeft());
         var modified = Math.ceil($tabs_width - el.position().left - el.get(0).getBoundingClientRect().width - $this.scrollLeft());
-        console.log('[DEBUG] calcRightPos original, modified, diff -->', original, modified, original - modified);
+        
         return modified;
       };
 
