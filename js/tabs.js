@@ -34,7 +34,10 @@
       // Finds right attribute for indicator based on active tab.
       // el: jQuery Object
       var calcRightPos = function(el) {
-        return Math.ceil($tabs_width - el.position().left - el.outerWidth() - $this.scrollLeft());
+        var original = Math.ceil($tabs_width - el.position().left - el.outerWidth() - $this.scrollLeft());
+        var modified = Math.ceil($tabs_width - el.position().left - el.get(0).getBoundingClientRect().width - $this.scrollLeft());
+        console.log('[DEBUG] calcRightPos original, modified, diff -->', original, modified, original - modified);
+        return modified;
       };
 
       // Finds left attribute for indicator based on active tab.
