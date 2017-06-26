@@ -1,5 +1,5 @@
 /*!
- * Materialize v0.99.0 (http://materializecss.com)
+ * Materialize vundefined (http://materializecss.com)
  * Copyright 2014-2017 Materialize
  * MIT License (https://raw.githubusercontent.com/Dogfalo/materialize/master/LICENSE)
  */
@@ -2121,7 +2121,7 @@ if (jQuery) {
             if (!(target instanceof SVGElement) && target.className.indexOf('waves-effect') !== -1) {
                 element = target;
                 break;
-            } else if (target.className.indexOf('waves-effect') !== -1) {
+            } else if (typeof target.className === 'string' && target.className.indexOf('waves-effect') !== -1) {
                 element = target;
                 break;
             }
