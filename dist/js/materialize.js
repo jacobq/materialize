@@ -1,5 +1,5 @@
 /*!
- * Materialize v0.99.0 (http://materializecss.com)
+ * Materialize vundefined (http://materializecss.com)
  * Copyright 2014-2017 Materialize
  * MIT License (https://raw.githubusercontent.com/Dogfalo/materialize/master/LICENSE)
  */
@@ -1010,7 +1010,9 @@ if (jQuery) {
       }); // done return
     },
     open : function() {
-      methods.init.apply( this, arguments );
+      if (arguments.length) {
+        methods.init.apply( this, arguments );
+      }
       $(this).trigger('openModal');
     },
     close : function() {
@@ -1411,8 +1413,8 @@ if (jQuery) {
 
       // Finds right attribute for indicator based on active tab.
       // el: jQuery Object
-      var calcRightPos = function(el) {
-        return Math.ceil($tabs_width - el.position().left - el.outerWidth() - $this.scrollLeft());
+        var calcRightPos = function(el) {
+          return Math.ceil($tabs_width - el.position().left - el[0].getBoundingClientRect().width - $this.scrollLeft());
       };
 
       // Finds left attribute for indicator based on active tab.
@@ -1636,6 +1638,7 @@ if (jQuery) {
       if (options === "remove") {
         this.each(function() {
           $('#' + $(this).attr('data-tooltip-id')).remove();
+          $(this).removeAttr('data-tooltip-id');
           $(this).off('mouseenter.tooltip mouseleave.tooltip');
         });
         return false;
@@ -2117,17 +2120,13 @@ if (jQuery) {
         var element = null;
         var target = e.target || e.srcElement;
 
-        while (target.parentElement !== null) {
+        while (target.parentNode !== null) {
             if (!(target instanceof SVGElement) && target.className.indexOf('waves-effect') !== -1) {
                 element = target;
                 break;
-            } else if (target.className.indexOf('waves-effect') !== -1) {
-                element = target;
-                break;
             }
-            target = target.parentElement;
+            target = target.parentNode;
         }
-
         return element;
     }
 
@@ -2147,6 +2146,7 @@ if (jQuery) {
 
             element.addEventListener('mouseup', Effect.hide, false);
             element.addEventListener('mouseleave', Effect.hide, false);
+            element.addEventListener('dragend', Effect.hide, false);
         }
     }
 
@@ -2178,7 +2178,7 @@ if (jQuery) {
         // to specify them with an options param? Eg. light/classic/button
         if (element.tagName.toLowerCase() === 'input') {
             Effect.wrapInput([element]);
-            element = element.parentElement;
+            element = element.parentNode;
         }
 
         if ('ontouchstart' in window) {
@@ -2519,12 +2519,12 @@ if (jQuery) {
                 $overlay.css('opacity', 0).click( function(){
                   removeMenu();
                 });
-                
+
                 // Run 'onOpen' when sidenav is opened via touch/swipe if applicable
                 if (typeof(options.onOpen) === 'function') {
                   options.onOpen.call(this, menu);
                 }
-                
+
                 $('body').append($overlay);
               }
 
@@ -2613,7 +2613,7 @@ if (jQuery) {
                       if (typeof(options.onClose) === 'function') {
                         options.onClose.call(this, menu);
                       }
-                      
+
                       $(this).remove();
                     }});
                   $dragTarget.css({width: '10px', right: '', left: 0});
@@ -2641,6 +2641,11 @@ if (jQuery) {
                   menu.velocity({'translateX': [options.menuWidth + 10, rightPos]}, {duration: 200, queue: false, easing: 'easeOutQuad'});
                   $overlay.velocity({opacity: 0 }, {duration: 200, queue: false, easing: 'easeOutQuad',
                     complete: function () {
+                      // Run 'onClose' when sidenav is closed via touch/swipe if applicable
+                      if (typeof(options.onClose) === 'function') {
+                        options.onClose.call(this, menu);
+                      }
+
                       $(this).remove();
                     }});
                   $dragTarget.css({width: '10px', right: 0, left: ''});
@@ -2678,24 +2683,27 @@ if (jQuery) {
               menu.velocity({'translateX': [0, options.menuWidth]}, {duration: 300, queue: false, easing: 'easeOutQuad'});
             }
 
+            // Overlay close on click
             $overlay.css('opacity', 0)
-            .click(function(){
-              menuOut = false;
-              panning = false;
-              removeMenu();
-              $overlay.velocity({opacity: 0}, {duration: 300, queue: false, easing: 'easeOutQuad',
-                complete: function() {
-                  $(this).remove();
-                } });
+              .click(function() {
+                menuOut = false;
+                panning = false;
+                removeMenu();
+                $overlay.velocity({opacity: 0}, {duration: 300, queue: false, easing: 'easeOutQuad',
+                  complete: function() {
+                    $(this).remove();
+                  }
+                });
+              });
 
-              });
-              $('body').append($overlay);
-              $overlay.velocity({opacity: 1}, {duration: 300, queue: false, easing: 'easeOutQuad',
-                complete: function () {
-                  menuOut = true;
-                  panning = false;
-                }
-              });
+            // Append body
+            $('body').append($overlay);
+            $overlay.velocity({opacity: 1}, {duration: 300, queue: false, easing: 'easeOutQuad',
+              complete: function () {
+                menuOut = true;
+                panning = false;
+              }
+            });
 
             // Callback
             if (typeof(options.onOpen) === 'function') {
@@ -3372,8 +3380,7 @@ if (jQuery) {
               if (val.length >= options.minLength) {
                 for(var key in data) {
                   if (data.hasOwnProperty(key) &&
-                      key.toLowerCase().indexOf(val) !== -1 &&
-                      key.toLowerCase() !== val) {
+                      key.toLowerCase().indexOf(val) !== -1) {
                     // Break if past limit
                     if (count >= options.limit) {
                       break;
@@ -3437,7 +3444,7 @@ if (jQuery) {
           });
 
           // Set input value
-          $autocomplete.on('mousedown.autocomplete touchstart.autocomplete', 'li', function () {
+          $autocomplete.off('mousedown.autocomplete touchstart.autocomplete').on('mousedown.autocomplete touchstart.autocomplete', 'li', function () {
             var text = $(this).text().trim();
             $input.val(text);
             $input.trigger('change');
@@ -3448,6 +3455,10 @@ if (jQuery) {
               options.onAutocomplete.call(this, text);
             }
           });
+
+        // Empty data
+        } else {
+          $input.off('keyup.autocomplete focus.autocomplete');
         }
       });
     };
@@ -5133,7 +5144,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
                 // Insert the root as specified in the settings.
                 if ( SETTINGS.container ) $( SETTINGS.container ).append( P.$root )
-                else $ELEMENT.after( P.$root )
+                else $ELEMENT.before( P.$root )
 
 
                 // Bind the default component and settings events.
@@ -5315,7 +5326,10 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
                             // On “enter”, if the highlighted item isn’t disabled, set the value and close.
                             else if ( !P.$root.find( '.' + CLASSES.highlighted ).hasClass( CLASSES.disabled ) ) {
-                                P.set( 'select', P.component.item.highlight ).close()
+                                P.set( 'select', P.component.item.highlight )
+                                if ( SETTINGS.closeOnSelect ) {
+                                    P.close( true )
+                                }
                             }
                         }
 
@@ -5732,11 +5746,17 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
                 // If something is picked, set `select` then close with focus.
                 else if ( !targetDisabled && 'pick' in targetData ) {
                     P.set( 'select', targetData.pick )
+                    if ( SETTINGS.closeOnSelect ) {
+                        P.close( true )
+                    }
                 }
 
                 // If a “clear” button is pressed, empty the values and close with focus.
                 else if ( targetData.clear ) {
-                    P.clear().close( true )
+                    P.clear()
+                    if ( SETTINGS.closeOnSelect ) {
+                        P.close( true )
+                    }
                 }
 
                 else if ( targetData.close ) {
@@ -5796,7 +5816,7 @@ function PickerConstructor( ELEMENT, NAME, COMPONENT, OPTIONS ) {
 
         // Insert the hidden input as specified in the settings.
         if ( SETTINGS.container ) $( SETTINGS.container ).append( P._hidden )
-        else $ELEMENT.after( P._hidden )
+        else $ELEMENT.before( P._hidden )
     }
 
 
@@ -6135,7 +6155,6 @@ return PickerConstructor
 
 
 }));
-
 ;/*!
  * Date picker for pickadate.js v3.5.0
  * http://amsul.github.io/pickadate.js/date.htm
@@ -7432,7 +7451,7 @@ return _.node(
 		                                    selected: isSelected && calendar.$node.val() === formattedDate ? true : null,
 		                                    activedescendant: isHighlighted ? true : null,
 		                                    disabled: isDisabled ? true : null
-		                                })
+		                                }) + ' ' + (isDisabled ? '' : 'tabindex="0"')
 		                            ),
 		                            '',
 		                            _.ariaAttr({ role: 'presentation' })
@@ -7505,6 +7524,9 @@ DatePicker.defaults = (function( prefix ) {
         today: 'Today',
         clear: 'Clear',
         close: 'Ok',
+
+        // Picker close behavior (Prevent a change in behaviour for backwards compatibility)
+        closeOnSelect: false,
 
         // The format to show on the `input` element
         format: 'd mmmm, yyyy',
@@ -7969,6 +7991,9 @@ Picker.extend( 'pickadate', DatePicker )
 				now.getHours(),
 				now.getMinutes()
 			];
+      if (this.options.twelvehour) {
+        this.amOrPm = value[0] >= 12 && value[0] < 24 ? 'PM' : 'AM';
+      }
 		}
 		this.hours = + value[0] || 0;
 		this.minutes = + value[1] || 0;
@@ -8345,7 +8370,6 @@ Picker.extend( 'pickadate', DatePicker )
 
       return this.each(function(i) {
 
-        var uniqueNamespace = namespace+i;
         var images, item_width, item_height, offset, center, pressed, dim, count,
             reference, referenceY, amplitude, target, velocity, scrolling,
             xform, frame, timestamp, ticker, dragged, vertical_dragged;
@@ -8356,12 +8380,16 @@ Picker.extend( 'pickadate', DatePicker )
 
         // Initialize
         var view = $(this);
-        var showIndicators = view.attr('data-indicators') || options.indicators;
+        var hasMultipleSlides = view.find('.carousel-item').length > 1;
+        var showIndicators = (view.attr('data-indicators') || options.indicators) && hasMultipleSlides;
+        var noWrap = (view.attr('data-no-wrap') || options.noWrap) || !hasMultipleSlides;
+        var uniqueNamespace = view.attr('data-namespace') || namespace+i;
+        view.attr('data-namespace', uniqueNamespace);
 
 
         // Options
-        var setCarouselHeight = function() {
-          var firstImage = view.find('.carousel-item img').first();
+        var setCarouselHeight = function(imageOnly) {
+          var firstImage = view.find('.carousel-item.active img').first();
           if (firstImage.length) {
             if (firstImage.prop('complete')) {
               view.css('height', firstImage.height());
@@ -8370,8 +8398,8 @@ Picker.extend( 'pickadate', DatePicker )
                 view.css('height', $(this).height());
               });
             }
-          } else {
-            var imageHeight = view.find('.carousel-item').first().height();
+          } else if (!imageOnly) {
+            var imageHeight = view.find('.carousel-item.active').first().height();
             view.css('height', imageHeight);
           }
         };
@@ -8393,7 +8421,7 @@ Picker.extend( 'pickadate', DatePicker )
           $(window).trigger('resize');
 
           // Redraw carousel.
-          $(this).trigger('carouselNext', [0.000001]);
+          view.trigger('carouselNext', [0.000001]);
           return true;
         }
 
@@ -8435,15 +8463,15 @@ Picker.extend( 'pickadate', DatePicker )
 
         function setupEvents() {
           if (typeof window.ontouchstart !== 'undefined') {
-            view[0].addEventListener('touchstart', tap);
-            view[0].addEventListener('touchmove', drag);
-            view[0].addEventListener('touchend', release);
+            view.on('touchstart.carousel', tap);
+            view.on('touchmove.carousel', drag);
+            view.on('touchend.carousel', release);
           }
-          view[0].addEventListener('mousedown', tap);
-          view[0].addEventListener('mousemove', drag);
-          view[0].addEventListener('mouseup', release);
-          view[0].addEventListener('mouseleave', release);
-          view[0].addEventListener('click', click);
+          view.on('mousedown.carousel', tap);
+          view.on('mousemove.carousel', drag);
+          view.on('mouseup.carousel', release);
+          view.on('mouseleave.carousel', release);
+          view.on('click.carousel', click);
         }
 
         function xpos(e) {
@@ -8514,7 +8542,7 @@ Picker.extend( 'pickadate', DatePicker )
 
           // center
           // Don't show wrapped items.
-          if (!options.noWrap || (center >= 0 && center < count)) {
+          if (!noWrap || (center >= 0 && center < count)) {
             el = images[wrap(center)];
 
             // Add active class to center item.
@@ -8543,7 +8571,7 @@ Picker.extend( 'pickadate', DatePicker )
               tweenedOpacity = 1 - 0.2 * (i * 2 + tween * dir);
             }
             // Don't show wrapped items.
-            if (!options.noWrap || center + i < count) {
+            if (!noWrap || center + i < count) {
               el = images[wrap(center + i)];
               el.style[xform] = alignment +
                 ' translateX(' + (options.shift + (dim * i - delta) / 2) + 'px)' +
@@ -8563,7 +8591,7 @@ Picker.extend( 'pickadate', DatePicker )
               tweenedOpacity = 1 - 0.2 * (i * 2 - tween * dir);
             }
             // Don't show wrapped items.
-            if (!options.noWrap || center - i >= 0) {
+            if (!noWrap || center - i >= 0) {
               el = images[wrap(center - i)];
               el.style[xform] = alignment +
                 ' translateX(' + (-options.shift + (-dim * i - delta) / 2) + 'px)' +
@@ -8576,7 +8604,7 @@ Picker.extend( 'pickadate', DatePicker )
 
           // center
           // Don't show wrapped items.
-          if (!options.noWrap || (center >= 0 && center < count)) {
+          if (!noWrap || (center >= 0 && center < count)) {
             el = images[wrap(center)];
             el.style[xform] = alignment +
               ' translateX(' + (-delta / 2) + 'px)' +
@@ -8655,7 +8683,7 @@ Picker.extend( 'pickadate', DatePicker )
           var diff = (center % count) - n;
 
           // Account for wraparound.
-          if (!options.noWrap) {
+          if (!noWrap) {
             if (diff < 0) {
               if (Math.abs(diff + count) < Math.abs(diff)) { diff += count; }
 
@@ -8674,7 +8702,8 @@ Picker.extend( 'pickadate', DatePicker )
         }
 
         function tap(e) {
-          if (e.type === 'mousedown') {
+          // Fixes firefox draggable image bug
+          if (e.type === 'mousedown' && $(e.target).is('img')) {
             e.preventDefault();
           }
           pressed = true;
@@ -8741,7 +8770,7 @@ Picker.extend( 'pickadate', DatePicker )
           target = Math.round(target / dim) * dim;
 
           // No wrap of items.
-          if (options.noWrap) {
+          if (noWrap) {
             if (target >= dim * (count - 1)) {
               target = dim * (count - 1);
             } else if (target < 0) {
@@ -8770,17 +8799,21 @@ Picker.extend( 'pickadate', DatePicker )
         });
 
 
-        $(window).off('resize.carousel-'+uniqueNamespace).on('resize.carousel-'+uniqueNamespace, function() {
+        var throttledResize = Materialize.throttle(function() {
           if (options.fullWidth) {
             item_width = view.find('.carousel-item').first().innerWidth();
-            item_height = view.find('.carousel-item').first().innerHeight();
+            var imageHeight = view.find('.carousel-item.active').height();
             dim = item_width * 2 + options.padding;
             offset = center * 2 * item_width;
             target = offset;
+            setCarouselHeight(true);
           } else {
             scroll();
           }
-        });
+        }, 200);
+        $(window)
+          .off('resize.carousel-'+uniqueNamespace)
+          .on('resize.carousel-'+uniqueNamespace, throttledResize);
 
         setupEvents();
         scroll(offset);
@@ -8841,6 +8874,20 @@ Picker.extend( 'pickadate', DatePicker )
     },
     set : function(n, callback) {
       $(this).trigger('carouselSet', [n, callback]);
+    },
+    destroy : function() {
+      var uniqueNamespace = $(this).attr('data-namespace');
+      $(this).removeAttr('data-namespace');
+      $(this).removeClass('initialized');
+      $(this).find('.indicators').remove();
+
+      // Remove event handlers
+      $(this).off('carouselNext carouselPrev carouselSet');
+      $(window).off('resize.carousel-'+uniqueNamespace);
+      if (typeof window.ontouchstart !== 'undefined') {
+        $(this).off('touchstart.carousel touchmove.carousel touchend.carousel');
+      }
+      $(this).off('mousedown.carousel mousemove.carousel mouseup.carousel mouseleave.carousel click.carousel');
     }
   };
 
